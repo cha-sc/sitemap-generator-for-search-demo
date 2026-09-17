@@ -10,6 +10,20 @@ interface SitemapUrl {
 
 const SITEMAP_DIR = path.join(process.cwd(), 'public', 'generated_sitemaps');
 
+// Relative <loc> values are resolved against the sitemap's own URL, so both
+// root-relative ("/doctors/jane") and path-relative ("doctors/jane") entries
+// end up on the domain the sitemap was fetched from.
+function toAbsoluteUrl(loc: unknown, baseUrl: string): string | null {
+  const raw = typeof loc === 'string' ? loc.trim() : String(loc ?? '').trim();
+  if (!raw) return null;
+
+  try {
+    return new URL(raw, baseUrl).toString();
+  } catch {
+    return null;
+  }
+}
+
 function determineContentType(url: string): string {
   const urlObj = new URL(url);
   const pathParts = urlObj.pathname.split('/').filter(Boolean);
@@ -49,7 +63,14 @@ export async function POST(request: NextRequest) {
       throw new Error('Invalid sitemap format');
     }
 
-    const urls = result.urlset.url.map((url: SitemapUrl) => typeof url === 'string' ? url : url.loc);
+    const baseUrl = response.url || sitemapUrl;
+    const urls = result.urlset.url
+      .map((url: SitemapUrl | string) => toAbsoluteUrl(typeof url === 'string' ? url : url.loc, baseUrl))
+      .filter((url: string | null): url is string => url !== null);
+
+    if (urls.length === 0) {
+      throw new Error('Sitemap contained no usable URLs');
+    }
 
     // Group URLs by content type
     const groupedUrls: { [key: string]: string[] } = {};
