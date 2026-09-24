@@ -33,7 +33,7 @@ interface ValidationResult {
 
 export default function Home() {
   const [sitemapUrl, setSitemapUrl] = useState("");
-  const [subsetSize, setSubsetSize] = useState("");
+  const [subsetSize, setSubsetSize] = useState("100");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [sitemapId, setSitemapId] = useState("");
@@ -70,12 +70,15 @@ export default function Home() {
     resetExtractor();
 
     try {
+      const parsedSize = parseInt(subsetSize, 10);
+      const size = Number.isFinite(parsedSize) && parsedSize >= 1 ? parsedSize : 100;
+
       const response = await fetch("/api/generate-subset", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ sitemapUrl, subsetSize: parseInt(subsetSize) }),
+        body: JSON.stringify({ sitemapUrl, subsetSize: size }),
       });
 
       if (!response.ok) {
@@ -188,11 +191,9 @@ export default function Home() {
             id="subsetSize"
             value={subsetSize}
             onChange={(e) => setSubsetSize(e.target.value)}
-            required
             min="1"
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
             placeholder="100"
-            defaultValue="100"
           />
         </div>
         <button
