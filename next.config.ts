@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['cheerio', 'axios', '@cursor/sdk'],
+  serverExternalPackages: ['@cursor/sdk'],
 };
 
 export default nextConfig;
